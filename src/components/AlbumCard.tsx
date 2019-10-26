@@ -22,6 +22,7 @@ const AlbumCard: React.FC<Props> = props => {
             <a
               href={props.album.googlePhotosUrl}
               target="_blank"
+              rel="noopener noreferrer"
               className="btn btn-sm btn-outline-secondary"
             >
               View
