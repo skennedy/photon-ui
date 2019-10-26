@@ -3,6 +3,7 @@ import useAxios from "axios-hooks";
 import { Album } from "../api/dto/album";
 import chunked from "../utils/chunked";
 import AlbumCard from "./AlbumCard";
+import { Row, Col } from "react-materialize";
 
 export default function AlbumList() {
   const [{ data: albums, loading, error }] = useAxios<Album[]>(
@@ -15,19 +16,13 @@ export default function AlbumList() {
     return <div>Loading...</div>;
   } else {
     return (
-      <div className="album py-5 bg-light">
-        <div className="container">
-          {chunked(3)(albums).map(albumRow => (
-            <div className="row">
-              {albumRow.map(album => (
-                <div className="col-md-4">
-                  <AlbumCard album={album} />
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
+      <Row>
+        {albums.map(album => (
+          <Col m={4} s={8}>
+            <AlbumCard album={album} />
+          </Col>
+        ))}
+      </Row>
     );
   }
 }
