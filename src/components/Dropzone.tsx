@@ -1,22 +1,25 @@
 import React from "react";
 import { useDropzone } from "react-dropzone";
-import { Button, Icon, Row, Collection, CardPanel } from "react-materialize";
-import FileUploader from "./FileUploader";
+import Box from "@mui/material/Box"
+import Button from "@mui/material/Button"
+import Card from "@mui/material/Card"
+import Icon from "@mui/material/Icon"
 import BulkFileUploader from "./BulkFileUploader";
+import CloudUploadSharpIcon from '@mui/icons-material/CloudUploadSharp';
 
 const Dropzone: React.FC  = () => {
   const { acceptedFiles, getRootProps, getInputProps } = useDropzone();
 
   const dropzone = (
-    <Row {...getRootProps()}>
-      <CardPanel>
-        <Button waves="light" large>
+    <Box {...getRootProps()}>
+      <Card>
+        <Button size="large">
           Drop files here
-          <Icon right>cloud</Icon>
+          <CloudUploadSharpIcon>cloud</CloudUploadSharpIcon>
           <input type="file" multiple {...getInputProps()} />
         </Button>
-      </CardPanel>
-    </Row>
+      </Card>
+    </Box>
   );
 
   return acceptedFiles.length > 0 ? <BulkFileUploader files={acceptedFiles}/> : dropzone;

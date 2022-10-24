@@ -1,29 +1,31 @@
 import React from "react";
-import logo from "./logo.svg";
-import "./App.css";
-import "materialize-css/dist/css/materialize.min.css";
-import AlbumList from "./components/AlbumList";
-import Dropzone from "./components/Dropzone";
+import CssBaseline from '@mui/material/CssBaseline';
+import { BrowserRouter } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import axiosFactory from 'axios';
+import {makeUseAxios} from 'axios-hooks';
+
+import { UserProvider } from './services/UserContext';
+
+import Routes from './Routes'
+
+const clientId = '130594197045-8b15dglnmepjhei5svpth3v8sjlt60m0.apps.googleusercontent.com';
+
+export const axios = axiosFactory.create({ baseURL: "http://localhost:8080" });
+export const useAxios = makeUseAxios({ axios });
 
 const App: React.FC = () => {
-  return (
-    <div>
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <h1>Photon</h1>
-      </header>
 
-      <section className="container">
-        <h3>Albums</h3>
-        <AlbumList />
-      </section>
-
-      <section className="container">
-        <h3>Upload</h3>
-        <Dropzone />
-      </section>
-    </div>
-  );
+    return (
+        <GoogleOAuthProvider clientId={clientId}>
+            <CssBaseline />
+            <BrowserRouter>
+                <UserProvider>
+                    <Routes />
+                </UserProvider>
+            </BrowserRouter>
+        </GoogleOAuthProvider>
+    );
 };
 
 export default App;

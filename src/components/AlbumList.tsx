@@ -1,13 +1,12 @@
 import React from "react";
-import useAxios from "axios-hooks";
+import { useAxios } from "../App";
 import { Album } from "../api/dto/album";
-import chunked from "../utils/chunked";
 import AlbumCard from "./AlbumCard";
-import { Row, Col } from "react-materialize";
+import Grid from '@mui/material/Grid'
 
 export default function AlbumList() {
   const [{ data: albums, loading, error }] = useAxios<Album[]>(
-    "http://localhost:8080/albums"
+    "/albums"
   );
 
   if (error) {
@@ -16,13 +15,13 @@ export default function AlbumList() {
     return <div>Loading...</div>;
   } else {
     return (
-      <Row>
-        {albums.map(album => (
-          <Col m={4} s={8}>
+        <Grid container spacing={2}>
+        {albums && albums.map(album => (
+          <Grid item md={4} sm={8}>
             <AlbumCard album={album} />
-          </Col>
+          </Grid>
         ))}
-      </Row>
+        </Grid>
     );
   }
 }
