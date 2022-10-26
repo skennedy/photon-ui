@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { AxiosProgressEvent } from "axios";
-import { useAxios } from "../App";
 import LinearProgress from "@mui/material/LinearProgress";
+import UserContext from "../services/UserContext";
 
 interface Props {
   file: File;
@@ -10,6 +10,7 @@ interface Props {
 
 const FileUploader: React.FC<Props> = ({ file, onUploadComplete }) => {
   const [progress, setProgress] = useState<number | undefined>(undefined);
+  const currentUser = useContext(UserContext);
 
   const uploadProgress = (evt: AxiosProgressEvent) => {
     setProgress(
@@ -20,7 +21,7 @@ const FileUploader: React.FC<Props> = ({ file, onUploadComplete }) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const [{ data, loading, error }, executeUpload] = useAxios(
+  const [{ data, loading, error }, executeUpload] = currentUser!.useAxios(
     {
       url: "/uploads",
       method: "POST",

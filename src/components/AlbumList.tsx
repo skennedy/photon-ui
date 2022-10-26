@@ -1,11 +1,13 @@
-import React from "react";
-import { useAxios } from "../App";
+import React, {useContext} from "react";
 import { Album } from "../api/dto/album";
 import AlbumCard from "./AlbumCard";
 import Grid from '@mui/material/Grid'
+import UserContext from "../services/UserContext";
 
 export default function AlbumList() {
-  const [{ data: albums, loading, error }] = useAxios<Album[]>(
+  const currentUser = useContext(UserContext);
+
+  const [{ data: albums, loading, error }] = currentUser!.useAxios<Album[]>(
     "/albums"
   );
 

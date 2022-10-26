@@ -1,22 +1,41 @@
 import React from "react";
 import Container from '@mui/material/Container';
-import {GoogleLogin} from '@react-oauth/google';
-import {login} from '../services/AuthService'
-import {axios} from '../App';
+import {CredentialResponse, GoogleLogin} from '@react-oauth/google';
+import {useNavigate} from 'react-router-dom';
+import {axiosForToken} from "../config";
 
 const Login: React.FC = () => {
+    const navigate = useNavigate();
+
+    const completeLogin = async (googleResponse: CredentialResponse) => {
+        if (googleResponse.credential) {
+            const idToken = googleResponse.credential;
+            try {
+                const resp = await axiosForToken(idToken)({
+                    url: "/auth/login",
+                    method: "POST",
+                })
+
+                localStorage.setItem('token', idToken);
+
+                if (resp.data.redirect) {
+                    console.log("Redirecting")
+                    window.location.href = resp.data.redirect;
+                } else {
+                    navigate("/")
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    };
 
     return (
         <Container>
             <GoogleLogin
                 useOneTap
                 auto_select
-                onSuccess={credentialResponse => {
-                    if (credentialResponse.credential) {
-                        console.log(credentialResponse);
-                        login(axios, credentialResponse.credential);
-                    }
-                }}
+                onSuccess={completeLogin}
                 onError={() => {
                     console.log('Login Failed');
                 }}
@@ -26,40 +45,3 @@ const Login: React.FC = () => {
 };
 
 export default Login;
-
-// <GoogleOAuthProvider clientId={clientId}>
-//     <div>
-//         <header className="App-header">
-//             <img src={logo} className="App-logo" alt="logo"/>
-//             <h1>Photon</h1>
-//         </header>
-//
-//         {authToken
-//             ? <div>
-//                 <section className="container">
-//                     <h3>Albums</h3>
-//                     <AlbumList/>
-//                 </section>
-//
-//                 <section className="container">
-//                     <h3>Upload</h3>
-//                     <Dropzone/>
-//                 </section>
-//             </div>
-//             : <GoogleLogin
-//                 useOneTap
-//                 auto_select
-//                 onSuccess={credentialResponse => {
-//                     console.log(credentialResponse);
-//                     setAuthToken(credentialResponse.credential)
-//                 }}
-//                 onError={() => {
-//                     console.log('Login Failed');
-//                 }}
-//             />
-//         }
-//
-//
-//     </div>
-// </GoogleOAuthProvider>
-//
