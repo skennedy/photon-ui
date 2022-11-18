@@ -56,7 +56,7 @@ const BulkFileUploader: React.FC<Props> = ({files}) => {
     const fileComponent = (file: File, idx: number) => {
         if (fileStates[idx].state === 'uploading') {
             return <li key={idx}>
-                {file.name}
+                {(file as any).webkitRelativePath}
                 <FileUploader
                     uploadId={uploadId!}
                     file={file}
@@ -66,7 +66,7 @@ const BulkFileUploader: React.FC<Props> = ({files}) => {
             </li>;
         } else {
             return <li key={idx}>
-                {file.name + ((fileStates[idx].error) ? `: ${fileStates[idx].error}` : "")}
+                {(file as any).webkitRelativePath + ((fileStates[idx].error) ? `: ${fileStates[idx].error}` : "")}
             </li>;
         }
     };

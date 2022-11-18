@@ -21,13 +21,14 @@ const FileUploader: React.FC<Props> = ({uploadId, file, onUploadComplete, onUplo
     };
 
     useEffect(() => {
-        const formData = new FormData();
-        formData.append("file", file);
-
         currentUser!.axios({
             url: `/upload-sources/${uploadId}/files`,
             method: "POST",
-            data: formData,
+            data: file,
+            headers: {
+                'Content-Type': file.type,
+                'X-FilePath': (file as any).webkitRelativePath,
+            },
             onUploadProgress: uploadProgress
         }).then(() => {
             setProgress(100);
