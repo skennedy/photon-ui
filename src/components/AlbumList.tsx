@@ -19,7 +19,7 @@ export default function AlbumList() {
     return (
         <Grid container spacing={2}>
         {albums && albums.map(album => (
-          <Grid item md={4} sm={8}>
+          <Grid item md={4} sm={8} key={album.id}>
             <AlbumCard album={album} />
           </Grid>
         ))}

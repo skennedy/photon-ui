@@ -35,7 +35,11 @@ const authenticatedUserFromStorage = async (): Promise<User | undefined> => {
     }
 };
 
-export const UserProvider: React.FC = ({children}) => {
+type Props = {
+    children?: React.ReactNode
+};
+
+export const UserProvider: React.FC<Props> = ({children}) => {
     const [currentUser, setCurrentUser] = useState<User | undefined>(undefined);
 
     useEffect(() => {
