@@ -112,7 +112,7 @@ const UploadSession: React.FC = () => {
                 </Paper>
             }
 
-            {succeeded.length &&
+            {succeeded.length > 0 &&
                 <Accordion>
                     <AccordionSummary
                         expandIcon={<ExpandMoreIcon/>}
@@ -121,11 +121,13 @@ const UploadSession: React.FC = () => {
                     </AccordionSummary>
                     <AccordionDetails>
                         <List>
-                            {succeeded.map(f => (<ListItem>{(f as any).webkitRelativePath}</ListItem>))}
+                            {succeeded.map((f, idx) => (<ListItem key={idx}>{(f as any).webkitRelativePath}</ListItem>))}
                         </List>
                     </AccordionDetails>
                 </Accordion>
             }
+
+            {failed.length > 0 &&
             <Accordion>
                 <AccordionSummary
                     expandIcon={<ExpandMoreIcon/>}
@@ -134,10 +136,10 @@ const UploadSession: React.FC = () => {
                 </AccordionSummary>
                 <AccordionDetails>
                     <List>
-                        {failed.map(({file, reason}) => (<ListItem>{`${(file as any).webkitRelativePath} - ${reason}`}</ListItem>))}
+                        {failed.map(({file, reason}, idx) => (<ListItem key={idx}>{`${(file as any).webkitRelativePath} - ${reason}`}</ListItem>))}
                     </List>
                 </AccordionDetails>
-            </Accordion>
+            </Accordion>}
 
             {!currentFile &&
                 <Box {...getRootProps()}>
