@@ -1,4 +1,4 @@
-import React, {useCallback, useContext, useEffect, useState} from "react";
+import React, {useCallback, useContext, useEffect, useState, useMemo} from "react";
 import {AxiosError, AxiosProgressEvent} from 'axios';
 import {useDropzone} from "react-dropzone";
 import {useParams} from "react-router-dom";
@@ -81,8 +81,9 @@ const useFileUploader = (uploadId: string, files: File[], onUploadSucceeded: (fi
 
     }, [uploadId, files, currentUser, onUploadSucceeded, onUploadFailed]);
 
-
-    const [doneBytes, totalBytes] = files.reduce(([done, total], f, idx) => [(idx < currentIndex) ? done + f.size : done, total + f.size], [0, 0]);
+    const accumulatedFileSizes = useMemo(() => files.reduce<number[]>((acc, f, idx) => [...acc, (idx == 0) ? f.size : acc[idx-1] + f.size], []), [files]);
+    const doneBytes = (currentIndex > 0) ? accumulatedFileSizes[currentIndex - 1] : 0;
+    const totalBytes = (accumulatedFileSizes.length > 0) ? accumulatedFileSizes[accumulatedFileSizes.length - 1] : 0;
     const progress = (totalBytes > 0) ? (doneBytes + currentBytesDone) / totalBytes * 100.0 : undefined;
     // console.log({currentIndex, currentBytesDone, doneBytes, totalBytes, progress})
     const currentFile = currentIndex < files.length ? files[currentIndex] : undefined;
