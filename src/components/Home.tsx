@@ -1,6 +1,6 @@
 import React from 'react';
 import AlbumList from "./AlbumList";
-import Dropzone from "./Dropzone";
+import NewUploadSession from "./NewUploadSession";
 
 const Home: React.FC = () => {
     return <div>
@@ -11,7 +11,7 @@ const Home: React.FC = () => {
 
         <section className="container">
             <h3>Upload</h3>
-            <Dropzone/>
+            <NewUploadSession/>
         </section>
     </div>;
 }
