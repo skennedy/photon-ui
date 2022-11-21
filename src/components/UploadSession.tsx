@@ -35,6 +35,8 @@ const useFileUploader = (uploadId: string, files: File[], onUploadSucceeded: (fi
 
     useEffect(() => {
 
+        let cancelled = false;
+
         const uploadFile = (index: number): Promise<any> => {
             setCurrentIndex(index);
             setCurrentBytesDone(0);
@@ -51,13 +53,19 @@ const useFileUploader = (uploadId: string, files: File[], onUploadSucceeded: (fi
                     },
                     onUploadProgress: (evt: AxiosProgressEvent) => {
                         setCurrentBytesDone(evt.loaded);
-                    }
+                    },
                 }).then(() => {
                     onUploadSucceeded(file);
+                    if (cancelled) {
+                        return Promise.resolve();
+                    }
                     return uploadFile(index + 1);
                 }).catch((e: AxiosError<string, any>) => {
                     const reason = (e.response) ? e.response.data : ((e.message) ? e.message : "Unknown error");
                     onUploadFailed({file, reason});
+                    if (cancelled) {
+                        return Promise.resolve();
+                    }
                     return uploadFile(index + 1);
                 });
             } else {
@@ -67,11 +75,16 @@ const useFileUploader = (uploadId: string, files: File[], onUploadSucceeded: (fi
 
         uploadFile(0);
 
+        return () => {
+            cancelled = true
+        };
+
     }, [uploadId, files, currentUser, onUploadSucceeded, onUploadFailed]);
 
 
     const [doneBytes, totalBytes] = files.reduce(([done, total], f, idx) => [(idx < currentIndex) ? done + f.size : done, total + f.size], [0, 0]);
     const progress = (totalBytes > 0) ? (doneBytes + currentBytesDone) / totalBytes * 100.0 : undefined;
+    // console.log({currentIndex, currentBytesDone, doneBytes, totalBytes, progress})
     const currentFile = currentIndex < files.length ? files[currentIndex] : undefined;
 
     return {progress, currentFile};
