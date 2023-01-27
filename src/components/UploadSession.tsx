@@ -1,4 +1,4 @@
-import React, {useCallback, useContext, useEffect, useState, useMemo} from "react";
+import React, {useCallback, useContext, useEffect, useState, useMemo, useRef} from "react";
 import {AxiosError, AxiosProgressEvent} from 'axios';
 import {useDropzone} from "react-dropzone";
 import {useParams} from "react-router-dom";
@@ -18,6 +18,18 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import UserContext from "../services/UserContext";
 
+interface UploadedFileResp {
+    id: string
+    createdAt: string
+    mediaSourceId: string
+    originalFileName: string
+    status: CreatedStatus | StoredStatus | FailedStatus
+}
+
+type CreatedStatus = { type: "Created", path: string }
+type StoredStatus = { type: "Stored", mediaFileId: string }
+type FailedStatus = { type: "Failed", error: string }
+
 interface FailedFile {
     file: File
     reason: string
@@ -32,6 +44,18 @@ const useFileUploader = (uploadId: string, files: File[], onUploadSucceeded: (fi
     const currentUser = useContext(UserContext);
     const [currentIndex, setCurrentIndex] = useState<number>(0);
     const [currentBytesDone, setCurrentBytesDone] = useState<number>(0);
+    const socketRef = useRef<WebSocket | null>(null);
+    const uploadIdToIndexRef = useRef<{ [uploadId: string]: number }>({});
+
+    const pushUploadIdIndex = (uploadId: string, index: number) => {
+        uploadIdToIndexRef.current = {...uploadIdToIndexRef.current, [uploadId]: index}
+    }
+
+    const popUploadIdIndex = (uploadId: string) => {
+        const {[uploadId]: index, ...rest} = uploadIdToIndexRef.current;
+        uploadIdToIndexRef.current = rest;
+        return index;
+    }
 
     useEffect(() => {
 
@@ -42,25 +66,27 @@ const useFileUploader = (uploadId: string, files: File[], onUploadSucceeded: (fi
             setCurrentBytesDone(0);
             if (index < files.length) {
                 const file = files[index];
+                console.log(file);
 
-                return currentUser!.axios({
+                return currentUser!.axios<UploadedFileResp>({
                     url: `/upload-sources/${uploadId}/files`,
                     method: "POST",
                     data: file,
                     headers: {
                         'Content-Type': file.type,
-                        'X-FilePath': (file as any).webkitRelativePath,
+                        'X-FilePath': (file as any).path,
                     },
                     onUploadProgress: (evt: AxiosProgressEvent) => {
                         setCurrentBytesDone(evt.loaded);
                     },
-                }).then(() => {
-                    onUploadSucceeded(file);
+                }).then((resp) => {
+                    pushUploadIdIndex(resp.data.id, currentIndex)
                     if (cancelled) {
                         return Promise.resolve();
                     }
                     return uploadFile(index + 1);
                 }).catch((e: AxiosError<string, any>) => {
+                    // TODO: retry logic because this should only be network errors?
                     const reason = (e.response) ? e.response.data : ((e.message) ? e.message : "Unknown error");
                     onUploadFailed({file, reason});
                     if (cancelled) {
@@ -79,9 +105,47 @@ const useFileUploader = (uploadId: string, files: File[], onUploadSucceeded: (fi
             cancelled = true
         };
 
-    }, [uploadId, files, currentUser, onUploadSucceeded, onUploadFailed]);
+    }, [uploadId, files, currentUser, currentIndex, onUploadSucceeded, onUploadFailed]);
 
-    const accumulatedFileSizes = useMemo(() => files.reduce<number[]>((acc, f, idx) => [...acc, (idx == 0) ? f.size : acc[idx-1] + f.size], []), [files]);
+    useEffect(() => {
+
+        socketRef.current = new WebSocket(`ws://localhost:8080/upload-sources/${uploadId}/status`);
+
+        return () => {
+            socketRef.current!.close();
+            socketRef.current = null;
+        };
+
+    }, [uploadId]);
+
+
+    useEffect(() => {
+        let onMessage = (evt: MessageEvent) => {
+            const msg: UploadedFileResp = JSON.parse(evt.data);
+            const uploadId = msg.id;
+            console.log(msg);
+
+            switch (msg.status.type) {
+                case "Created":
+                    break;
+                case "Stored":
+                    onUploadSucceeded(files[popUploadIdIndex(uploadId)]);
+                    break;
+                case "Failed":
+                    onUploadFailed({file: files[popUploadIdIndex(uploadId)], reason: msg.status.error});
+                    break;
+            }
+        };
+        socketRef.current!.addEventListener('message', onMessage);
+
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.removeEventListener('message', onMessage)
+            }
+        };
+    }, [files, onUploadSucceeded, onUploadFailed]);
+
+    const accumulatedFileSizes = useMemo(() => files.reduce<number[]>((acc, f, idx) => [...acc, (idx === 0) ? f.size : acc[idx - 1] + f.size], []), [files]);
     const doneBytes = (currentIndex > 0) ? accumulatedFileSizes[currentIndex - 1] : 0;
     const totalBytes = (accumulatedFileSizes.length > 0) ? accumulatedFileSizes[accumulatedFileSizes.length - 1] : 0;
     const progress = (totalBytes > 0) ? (doneBytes + currentBytesDone) / totalBytes * 100.0 : undefined;
@@ -135,25 +199,27 @@ const UploadSession: React.FC = () => {
                     </AccordionSummary>
                     <AccordionDetails>
                         <List>
-                            {succeeded.map((f, idx) => (<ListItem key={idx}>{(f as any).webkitRelativePath}</ListItem>))}
+                            {succeeded.map((f, idx) => (
+                                <ListItem key={idx}>{(f as any).path}</ListItem>))}
                         </List>
                     </AccordionDetails>
                 </Accordion>
             }
 
             {failed.length > 0 &&
-            <Accordion>
-                <AccordionSummary
-                    expandIcon={<ExpandMoreIcon/>}
-                >
-                    <Typography>❌ {failed.length} Files</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <List>
-                        {failed.map(({file, reason}, idx) => (<ListItem key={idx}>{`${(file as any).webkitRelativePath} - ${reason}`}</ListItem>))}
-                    </List>
-                </AccordionDetails>
-            </Accordion>}
+                <Accordion>
+                    <AccordionSummary
+                        expandIcon={<ExpandMoreIcon/>}
+                    >
+                        <Typography>❌ {failed.length} Files</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <List>
+                            {failed.map(({file, reason}, idx) => (
+                                <ListItem key={idx}>{`${(file as any).path} - ${reason}`}</ListItem>))}
+                        </List>
+                    </AccordionDetails>
+                </Accordion>}
 
             {!currentFile &&
                 <Box {...getRootProps()}>
