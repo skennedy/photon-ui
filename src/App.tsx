@@ -7,12 +7,11 @@ import {GoogleOAuthProvider} from '@react-oauth/google';
 import {UserProvider} from './services/UserContext';
 
 import Routes from './Routes'
-import {clientId} from "./config";
 
 const App: React.FC = () => {
 
     return (
-        <GoogleOAuthProvider clientId={clientId}>
+        <GoogleOAuthProvider clientId={window.env.GOOGLE_CLIENT_ID}>
             <Container component="main" maxWidth="sm">
                 <CssBaseline/>
                 <BrowserRouter>
