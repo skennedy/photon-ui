@@ -105,7 +105,7 @@ const useFileUploader = (uploadId: string, files: File[], onUploadSucceeded: (fi
             cancelled = true
         };
 
-    }, [uploadId, files, currentUser, currentIndex, onUploadSucceeded, onUploadFailed]);
+    }, [uploadId, files, currentUser, onUploadFailed]);
 
     useEffect(() => {
 
